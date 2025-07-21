@@ -221,8 +221,9 @@ module tt_um_simonsays (
     // CHECK: 11
     assign uo_out[4] = en_DISPLAY | en_CHECK;
     assign uo_out[5] = en_WAIT | en_CHECK; 
+    
+    // drive unused ports
     assign uio_out = 8'b0;
-
-
+    assign uo_out[7:6] = 2'b00;
     assign uio_oe  = 8'b1111_1111; // All uio_out pins are outputs
 endmodule
