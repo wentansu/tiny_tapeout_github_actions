@@ -83,7 +83,7 @@ module tt_um_simonsays (
 
     //Decoder - input
     wire [3:0] colour_dec_in = ui_in[3:0];
-    wire colour_dec_out;
+    wire [1:0]colour_dec_out;
 
     // Assignments
     // START

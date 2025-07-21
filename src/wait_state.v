@@ -18,7 +18,7 @@
             complete_wait <= 1'b0;
         end else if (en && colour_in && !complete_wait) begin
             // Add the new colour_val to the sequence at the correct position
-            sequence_val <= (sequence_val <<  2)| (colour_val);
+            sequence_val <= (sequence_val <<  2)| {30'b0, colour_val};
             count    <= count + 1'b1;
             if (count + 1'b1 == sequence_len)
                 complete_wait <= 1'b1;
