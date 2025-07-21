@@ -19,7 +19,8 @@ module display_state (
         if (rst_display) begin
             pos              <= 4'd0;
             active           <= 1'b0;
-            colour_bus       <= 2'bzz;   // Hi-Z inside, OE=0 outside
+            // colour_bus       <= 2'bzz;   // Hi-Z inside, OE=0 outside
+            colour_bus       <= 2'b00;
             colour_oe        <= 1'b0;
             complete_display <= 1'b0;
         end
