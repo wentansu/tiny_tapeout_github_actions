@@ -16,7 +16,7 @@ module colour_encoder (
             uo[3] =  colour_enc_in[0] &  colour_enc_in[1]; // green
         end else begin
             // High-impedance when output is disabled
-            uo = 4'bzzzz;
+            uo = 4'b0000;
         end
     end
 

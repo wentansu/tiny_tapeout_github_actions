@@ -47,7 +47,7 @@ module display_state (
             end
             else begin
                 // ---------- idle state ---------------------------
-                colour_bus <= 2'bzz;      // internal Hi-Z
+                // colour_bus <= 2'bzz;      // internal Hi-Z
                 colour_oe  <= 1'b0;       // inform wrapper to tri-state pads
             end
         end
