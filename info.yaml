@@ -24,7 +24,7 @@ project:
     - "wait_state.v"
     - "check_state.v"
     - "display_state.v"
-    - "counter.v"
+    - "sequence_mem.v"
     - "colour_encoder.v"
     - "colour_decoder.v"
     - "start_reg.v"

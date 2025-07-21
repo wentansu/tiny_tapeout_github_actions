@@ -15,19 +15,17 @@ module tt_um_simonsays (
   // Local Signals
 
     //Input
-    wire reset = ui_in[4];                             // Reset signal
+    wire reset = ui_in[4];                             
 
     //Start Reg
     wire start = ui_in[5]; 
     wire START_REG_OUT;
     wire rst_START_REG; 
-    assign rst_START_REG = game_complete | reset;
+    
 
     //IDLE 
     wire en_IDLE;
-    assign en_IDLE = START_REG_OUT & ~complete_IDLE;
     wire rst_IDLE; 
-    assign rst_IDLE = idle_rst_CHECK_OUT | reset;
     wire complete_IDLE; 
     
     //LFSR
@@ -36,23 +34,19 @@ module tt_um_simonsays (
     wire complete_LFSR;                              
     wire en_LFSR;
     wire rst_LFSR;
-    assign rst_LFSR = reset;
-
+    
     //32bMEM
     wire MEM_LOAD;
     wire [7:0]MEM_IN; // load 8 bits at a time
     wire [1:0]MEM_LOAD_VAL;
     wire rst_MEM;
-    assign rst_MEM = reset;
     wire [31:0]MEM_OUT;
 
     
 
     //DISPLAY
     wire en_DISPLAY;
-    assign en_DISPLAY = complete_IDLE & ~complete_DISPLAY;
     wire rst_DISPLAY;
-    assign rst_DISPLAY = display_rst_CHECK_OUT | reset;
     wire complete_DISPLAY;
     wire [31:0] seq_in_DISPLAY;
 
@@ -60,23 +54,15 @@ module tt_um_simonsays (
 
     //WAIT
     wire en_WAIT;
-    assign en_WAIT = complete_DISPLAY & ~complete_WAIT;
     wire rst_WAIT;
-    assign rst_WAIT = wait_rst_CHECK_OUT | reset;
     wire [31:0] seq_out_WAIT;
     wire [1:0] colour_val_WAIT;
-    assign colour_val_WAIT = colour_dec_out;
     wire colour_in_WAIT;
-    assign colour_in_WAIT = ui_in[0] | ui_in[1] | ui_in[2] | ui_in[3]; // if any button is pressed
     wire complete_WAIT;
-
-    // ================
     
     //CHECK
     wire en_CHECK;
-    assign en_CHECK = complete_WAIT & ~complete_CHECK;
     wire rst_CHECK;
-    assign rst_CHECK = check_rst_CHECK_OUT | reset;
     wire game_complete;
     wire complete_CHECK;
     wire idle_rst_CHECK_OUT;
@@ -85,8 +71,12 @@ module tt_um_simonsays (
     wire check_rst_CHECK_OUT;
 
     //Counter 
-    reg [3:0] global_counter;
+    wire [3:0] counter_out;
+    wire [3:0] counter_in;
+    wire rst_counter;
+    wire counter_load;
 
+    
     //Encoder - output
     wire [1:0] colour_enc_in;
     wire en_colour_enc; 
@@ -95,8 +85,38 @@ module tt_um_simonsays (
     wire [3:0] colour_dec_in = ui_in[3:0];
     wire colour_dec_out;
 
+    // Assignments
+    // START
+    assign rst_START_REG = game_complete | reset;
 
+    //IDLE
+    assign en_IDLE = START_REG_OUT & ~complete_IDLE;
+    assign rst_IDLE = idle_rst_CHECK_OUT | reset;
+    
+    //LFSR
+    assign rst_LFSR = reset;
 
+    // MEM
+    assign rst_MEM = reset;
+    
+    // DISPLAY
+    assign en_DISPLAY = complete_IDLE & ~complete_DISPLAY;
+    assign rst_DISPLAY = display_rst_CHECK_OUT | reset;
+    
+    // WAIT
+    assign en_WAIT = complete_DISPLAY & ~complete_WAIT;
+    assign rst_WAIT = wait_rst_CHECK_OUT | reset;
+    assign colour_val_WAIT = colour_dec_out;
+    assign colour_in_WAIT = ui_in[0] | ui_in[1] | ui_in[2] | ui_in[3]; // if any button is pressed
+    
+    // CHECK
+    assign en_CHECK = complete_WAIT & ~complete_CHECK;
+    assign rst_CHECK = check_rst_CHECK_OUT | reset;
+
+    // counter
+    assign counter_load = complete_CHECK; // dc this logic
+    assign rst_counter = game_complete;
+    
     start_reg START(
         .clk(clk),
         .rst(rst_START_REG),
@@ -152,8 +172,8 @@ module tt_um_simonsays (
         .en(en_WAIT),
         .colour_in(colour_in_WAIT),
         .colour_val(colour_val_WAIT),
-        .sequence_len(global_counter),
-        .complete_wait(complete_wait),
+        .sequence_len(counter_out),
+        .complete_wait(complete_WAIT),
         .sequence_val(seq_out_WAIT)
     );
 
@@ -163,8 +183,8 @@ module tt_um_simonsays (
         .en_check(en_CHECK),
         .seq_in_check(seq_out_WAIT),
         .seq_mem(MEM_OUT),
-        .round_ctr_in(global_counter),
-        .round_ctr_out(global_counter),
+        .round_ctr_in(counter_out),
+        .round_ctr_out(counter_in),
         .complete_check(complete_CHECK),
         .game_complete(game_complete),
         .rst_wait(wait_rst_CHECK_OUT),
@@ -178,10 +198,18 @@ module tt_um_simonsays (
         .rst_display(rst_DISPLAY),
         .en_display(en_DISPLAY),
         .seq_in_display(MEM_OUT),
-        .round_ctr(global_counter),
+        .round_ctr(counter_out),
         .colour_bus(colour_enc_in),
         .colour_oe(en_colour_enc),
         .complete_display(complete_DISPLAY)
+    );
+
+    SEQUENCE_MEM sequence_mem(
+        .clk(clk),
+        .rst(rst_counter),
+        .load(counter_load),
+        .data_in(counter_in),
+        .data_out(counter_out)
     );
 
 
@@ -193,6 +221,8 @@ module tt_um_simonsays (
     // CHECK: 11
     assign uo_out[4] = en_DISPLAY | en_CHECK;
     assign uo_out[5] = en_WAIT | en_CHECK; 
+    assign uio_out = 8'b0;
+
 
     assign uio_oe  = 8'b1111_1111; // All uio_out pins are outputs
 endmodule
