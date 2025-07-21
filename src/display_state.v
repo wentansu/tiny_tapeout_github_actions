@@ -35,7 +35,7 @@ module display_state (
 
             // ---------- active colour streaming ------------------
             if (active) begin
-                colour_bus <= seq_in_display[(pos << 1) +: 2];
+                colour_bus <= seq_in_display[{1'b0, pos} +: 2];
                 colour_oe  <= 1'b1;      // drive bus
 
                 if (pos == round_ctr) begin
