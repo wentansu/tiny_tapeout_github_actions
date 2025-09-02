@@ -6,35 +6,51 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
 
+# Utility: reverse bit order
+def reverse_bits(val: int, size: int) -> int:
+    result = 0
+    for i in range(size):
+        if (val >> i) & 1:
+            result |= 1 << (size - 1 - i)
+    return result
+
+
 @cocotb.test()
 async def test_project(dut):
-    dut._log.info("Start")
+    dut._log.info("Start JTAG test")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
+    # Set the clock period to 10 ns (100 MHz)
+    clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
+    # Initialize
+    dut.ena.value = 1       # use internal sequencer
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+
+    # Enable VCD dumping
+    cocotb.start_soon(dut._vcd_writer("tb.vcd"))
+
+    # Hold reset a few cycles
+    await ClockCycles(dut.clk, 4)
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    # Wait enough cycles for full internal TMS/TDI sequence
+    await ClockCycles(dut.clk, 80)
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    # Expected values
+    expected_tdr = 0b1111
+    expected_output = reverse_bits(0b1001, 4)
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    # Check result
+    actual_tdr = int(dut.uo_out.value) >> 1 & 0b1111  # uo_out[4:1]
+    dut._log.info(f"TDR observed = {actual_tdr:04b}, expected = {expected_tdr:04b}")
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    assert actual_tdr == expected_tdr, (
+        f"Mismatch TDR: expected {expected_tdr:04b}, got {actual_tdr:04b}"
+    )
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    dut._log.info("[PASS] TDR matches expected")
+
+    dut._log.info("Simulation completed")
